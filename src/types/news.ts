@@ -1,5 +1,3 @@
-export type NewsSource = 'newsapi' | 'guardian' | 'nytimes'
-
 export interface Article {
   source: string
   title: string

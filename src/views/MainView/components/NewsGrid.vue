@@ -1,38 +1,62 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useInfiniteScroll } from '@vueuse/core'
 import type { Article } from '@/types/news'
-import { useNewsAPIEverything } from '@/hooks/useNewsAPIEverything'
-import { fromNewsAPI } from '@/mappers/news'
+import { useDeepSearchArticles } from '@/hooks/useDeepSearchArticles'
+import { fromDeepSearch } from '@/mappers/news'
 import NewsCard from './NewsCard.vue'
-import type { NewsAPIEverythingParams } from '@/models/newsapi'
+import type { DeepSearchParams } from '@/models/deepsearch'
+import { Loader2 } from 'lucide-vue-next'
 
 const props = withDefaults(
     defineProps<{
         search?: string
-        activeSources?: string[]
+        dateFrom?: string
+        dateTo?: string
     }>(),
     {
         search: '',
-        activeSources: () => [],
+        dateFrom: '',
+        dateTo: '',
     },
 )
 
-const queryParams = computed<NewsAPIEverythingParams>(() => {
-    const query = props.search.trim()
+const emit = defineEmits<{
+    'reset-filters': []
+}>()
 
+const queryParams = computed<Omit<DeepSearchParams, 'page'>>(() => {
+    const keyword = props.search.trim() || undefined
     return {
-        q: query || 'latest', // q는 필수라서 빈 값 대신 기본값 권장
-        sortBy: 'publishedAt',
-        sources: props.activeSources.length > 0 ? props.activeSources.join(',') : undefined,
-        language: 'en'
+        keyword,
+        date_from: props.dateFrom || undefined,
+        date_to: props.dateTo || undefined,
+        page_size: 20,
+        order: 'published_at',
     }
 })
 
-const { data, isLoading } = useNewsAPIEverything(queryParams)
+const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useDeepSearchArticles(queryParams)
 
 const articles = computed<Article[]>(() => {
-    return data.value?.articles?.map(fromNewsAPI) ?? []
+    return data.value?.pages.flatMap((p) => p.data.map(fromDeepSearch)) ?? []
 })
+
+// 무한 스크롤 부분 또는 그 밑 요소
+const sentinel = ref<HTMLElement | null>(null)
+
+useInfiniteScroll(
+    sentinel,
+    () => {
+        if (hasNextPage.value && !isFetchingNextPage.value) {
+            fetchNextPage()
+        }
+    },
+    {
+        distance: 200,
+        canLoadMore: () => hasNextPage.value ?? false,
+    },
+)
 </script>
 
 <template>
@@ -54,18 +78,33 @@ const articles = computed<Article[]>(() => {
         </div>
 
         <template v-else>
-            <div v-if="articles.length > 0"
-                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-                <NewsCard v-for="article in articles" :key="article.url" :news="article"
-                    @toggle-save="(a) => console.log('저장 기능 구현 예정:', a.title)" />
+            <div v-if="articles.length > 0">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+                    <NewsCard v-for="article in articles" :key="article.url" :news="article"
+                        @toggle-save="(a) => console.log('저장 기능 구현 예정:', a.title)" />
+                </div>
+
+                <div ref="sentinel" class="flex justify-center py-8">
+                    <div v-if="isFetchingNextPage" class="flex items-center gap-2 text-brand-sub text-sm">
+                        <Loader2 class="size-4 animate-spin" />
+                        <span>불러오는 중...</span>
+                    </div>
+                    <span v-else-if="!hasNextPage" class="text-brand-sub text-xs">
+                        모든 기사를 불러왔습니다.
+                    </span>
+                </div>
             </div>
 
             <div v-else class="flex flex-col items-center justify-center py-24 text-center">
                 <h3 class="text-lg font-medium text-brand-text mb-1">결과를 찾을 수 없습니다.</h3>
                 <p class="text-brand-sub">
-                    {{ props.search ? `"${props.search}"에 대한 검색 결과가 없습니다.` : '선택한 조건에 맞는 기사가 없습니다.' }}
+                    {{
+                        props.search
+                            ? `"${props.search}"에 대한 검색 결과가 없습니다.`
+                            : '선택한 조건에 맞는 기사가 없습니다.'
+                    }}
                 </p>
-                <button v-if="props.search || props.activeSources.length" @click="$emit('reset-filters')"
+                <button v-if="props.search" @click="emit('reset-filters')"
                     class="mt-4 text-sm text-brand-accent underline underline-offset-4">
                     필터 초기화
                 </button>

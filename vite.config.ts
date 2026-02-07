@@ -17,4 +17,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      '/api/deepsearch': {
+        target: 'https://api-v2.deepsearch.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/deepsearch/, ''),
+      },
+    },
+  },
 })

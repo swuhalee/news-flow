@@ -2,6 +2,7 @@ import type { Article } from '@/types/news'
 import type { NewsAPIArticle } from '@/models/newsapi'
 import type { GuardianArticle } from '@/models/guardian'
 import type { NYTimesArticle, NYTimesTopStoriesArticle } from '@/models/nytimes'
+import type { DeepSearchArticle } from '@/models/deepsearch'
 
 export function fromNewsAPI(article: NewsAPIArticle): Article {
   return {
@@ -52,5 +53,18 @@ export function fromNYTimesTopStories(article: NYTimesTopStoriesArticle): Articl
     imageUrl: article.multimedia[0]?.url ?? null,
     author: article.byline,
     section: article.section,
+  }
+}
+
+export function fromDeepSearch(article: DeepSearchArticle): Article {
+  return {
+    source: article.publisher ?? 'deepsearch',
+    title: article.title,
+    url: article.content_url,
+    publishedAt: article.published_at,
+    description: article.summary,
+    imageUrl: article.image_url ?? article.thumbnail_url,
+    author: article.author,
+    section: article.sections[0] ?? null,
   }
 }
