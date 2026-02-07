@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import MainView from '@/views/MainView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -7,22 +6,22 @@ const router = createRouter({
     {
       path: '/',
       name: 'main',
-      component: MainView,
+      component: () => import('@/views/MainView/index.vue'),
     },
     {
       path: '/insight',
       name: 'insight',
-      component: () => import('@/views/InsightView.vue'),
+      component: () => import('@/views/InsightView/index.vue'),
     },
     {
       path: '/news/:id',
       name: 'detail',
-      component: () => import('@/views/DetailView.vue'),
+      component: () => import('@/views/DetailView/index.vue'),
     },
     {
       path: '/saved',
       name: 'saved',
-      component: () => import('@/views/SavedView.vue'),
+      component: () => import('@/views/SavedView/index.vue'),
     },
   ],
 })

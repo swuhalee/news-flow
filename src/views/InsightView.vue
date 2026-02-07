@@ -1,3 +1,0 @@
-<template>
-  <h1>분석 리포트</h1>
-</template>

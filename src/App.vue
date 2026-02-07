@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppHeader from '@/components/layout/AppHeader.vue'
+import AppSidebar from '@/common/layout/AppSidebar.vue'
+import AppHeader from '@/common/layout/AppHeader.vue'
 
 const sidebarOpen = ref(false)
 </script>
@@ -22,7 +22,7 @@ const sidebarOpen = ref(false)
     <div class="lg:pl-65">
       <AppHeader @toggle-sidebar="sidebarOpen = !sidebarOpen" />
 
-      <main class="p-8">
+      <main class="p-4 sm:p-6 lg:p-8">
         <RouterView />
       </main>
     </div>
